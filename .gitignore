@@ -1,0 +1,44 @@
+# Archivos de sesión de R
+.Rproj.user
+.Rhistory
+.RData
+.Ruserdata
+*.Rproj
+
+# renv
+renv/library/
+renv/local/
+renv/cellar/
+renv/lock/
+renv/python/
+renv/staging/
+
+# Bases de datos y datos procesados — NO COMPARTIR
+bd/
+data-raw/
+data/processed/
+data/dictionary/*.csv
+*.csv
+*.xlsx
+*.xls
+*.rds
+*.parquet
+*.zip
+*.png
+
+# Solo conservar la documentación sobre los datos
+!data-raw/README.md
+!docs/
+
+# Salidas
+output/*
+!output/.gitkeep
+
+# Sistema operativo y editores
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*~
+*.swp
+*.log
