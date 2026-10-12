@@ -22,6 +22,6 @@ Cada prefijo de 4 dígitos mapea a exactamente una categoría CIE-10 en las tres
 
 ## Cómo obtener los datos crudos
 
-Los archivos Excel originales del INEC **no** están en este repositorio.  
-Ver `data-raw/README.md` para las instrucciones de descarga.
+...
+
 
