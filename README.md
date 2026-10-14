@@ -6,7 +6,7 @@ Pipeline reproducible para el análisis de mortalidad de Costa Rica (2015–2025
 
 Transformar las exportaciones de REDATAM y las estimaciones de población del INEC en bases de datos de análisis listas para usar, con trazabilidad completa de la codificación CIE-10.
 
-## Importante: qué es `causa4dig`
+## `causa4dig`
 
 La variable REDATAM **“Causa básica de defunción numérica a 4 dígitos”** 
 
