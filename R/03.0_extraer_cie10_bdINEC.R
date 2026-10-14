@@ -1,14 +1,14 @@
 # =============================================================================
-# Defunciones por causa (CIE-10), provincia, sexo y edad
+# Defunciones por causa (causa4dig), provincia, sexo y edad
 # Costa Rica, 2015-2025
 # =============================================================================
 #
-# Entrada
-#   Defunciones_YYYY.xlsx en la carpeta de OneDrive.
+# Entrada (dir_raw, ver R/00_config.R)
+#   Defunciones_YYYY.xlsx
 #   Misma estructura INEC: bloques Hombres / Mujeres por provincia,
-#   filas = código CIE, columnas = grupos de edad.
+#   filas = código de causa, columnas = grupos de edad.
 #
-# Salida
+# Salida (dir_procesados)
 #   Un solo CSV, todos los años:
 #   mortalidad_cie10_2015_2025.csv
 #
@@ -17,7 +17,9 @@
 #   sexo       Hombre | Mujer
 #   anio       año de registro
 #   region     provincia de residencia (sin el total nacional)
-#   CIE10_4    código de causa
+#   INEC_4     código numérico REDATAM causa4dig, como entero (104, 921, 1044...).
+#              NO es todavía el código CIE-10: la categoría CIE-10 (A04, I21,
+#              J44...) se agrega en el script 06.
 #   mortalidad defunciones
 #
 # Edades
@@ -38,41 +40,9 @@ library(readxl)
 library(stringr)
 library(purrr)
 
-carpeta <- "dirección de la carpeta"
+source("R/00_config.R")
 
-orden_regiones <- c(
-  "San José", "Alajuela", "Cartago", "Heredia",
-  "Guanacaste", "Puntarenas", "Limón"
-)
-
-orden_edades <- c(
-  "0", "1-4",
-  "5-9", "10-14", "15-19", "20-24", "25-29",
-  "30-34", "35-39", "40-44", "45-49", "50-54",
-  "55-59", "60-64", "65-69", "70-74", "75-79",
-  "80-84", "85-89",
-  "90 años y más",
-  "Edad ignorada",
-  "Total"
-)
-
-edades_originales <- c(
-  "Menores de 1 año", "1-4 años", "5-9 años", "10-14 años", "15-19 años",
-  "20-24 años", "25-29 años", "30-34 años", "35-39 años", "40-44 años",
-  "45-49 años", "50-54 años", "55-59 años", "60-64 años", "65-69 años",
-  "70-74 años", "75-79 años", "80-84 años", "85-89 años", "90-94 años",
-  "95-99 años", "100 y más años", "Edad ignorada", "Total"
-)
-
-provincias <- c(
-  "1" = "San José",
-  "2" = "Alajuela",
-  "3" = "Cartago",
-  "4" = "Heredia",
-  "5" = "Guanacaste",
-  "6" = "Puntarenas",
-  "7" = "Limón"
-)
+orden_edades <- c(grupos_edad_quinquenal, "Edad ignorada", "Total")
 
 
 # -----------------------------------------------------------------------------
@@ -125,7 +95,7 @@ extraer_defunciones <- function(ruta_archivo) {
     } else {
       last_area_row <- max(areas_antes)
       area_num <- as.character(df[[3]][last_area_row])
-      region <- provincias[area_num]
+      region <- codigos_provincia[area_num]
 
       if (!is.na(area_num) && as.integer(area_num) == 7) {
         if (any(total_idx > last_area_row & total_idx < start_row)) {
@@ -148,20 +118,20 @@ extraer_defunciones <- function(ruta_archivo) {
 
     if (nrow(bloque) == 0) next
 
-    names(bloque)[3] <- "CIE10_4"
-    names(bloque)[4:27] <- edades_originales
+    names(bloque)[3] <- "INEC_4"
+    names(bloque)[4:27] <- edades_originales_causa
 
     bloque_long <- bloque %>%
-      select(CIE10_4, all_of(edades_originales)) %>%
-      mutate(across(-CIE10_4, ~ if_else(.x %in% c("-", "", NA), 0L, as.integer(.x)))) %>%
-      pivot_longer(-CIE10_4, names_to = "edad", values_to = "mortalidad") %>%
+      select(INEC_4, all_of(edades_originales_causa)) %>%
+      mutate(across(-INEC_4, ~ if_else(.x %in% c("-", "", NA), 0L, as.integer(.x)))) %>%
+      pivot_longer(-INEC_4, names_to = "edad", values_to = "mortalidad") %>%
       mutate(
-        region  = region,
-        anio    = anio,
-        sexo    = sexo,
-        CIE10_4 = str_trim(CIE10_4)
+        region = unname(region),
+        anio   = anio,
+        sexo   = sexo,
+        INEC_4 = str_trim(INEC_4)
       ) %>%
-      select(region, anio, sexo, edad, CIE10_4, mortalidad)
+      select(region, anio, sexo, edad, INEC_4, mortalidad)
 
     resultados[[length(resultados) + 1]] <- bloque_long
   }
@@ -175,43 +145,52 @@ extraer_defunciones <- function(ruta_archivo) {
 # -----------------------------------------------------------------------------
 
 archivos <- list.files(
-  carpeta,
-  pattern = "^Defunciones_\\d{4}\\.xlsx$",
+  dir_raw,
+  pattern = patron_defunciones_causa,
   full.names = TRUE
 ) %>%
   sort()
 
 message("Archivos encontrados: ", length(archivos))
 print(basename(archivos))
+if (length(archivos) == 0) stop("No hay archivos Defunciones_YYYY.xlsx en ", dir_raw)
 
 defunciones <- map_dfr(archivos, extraer_defunciones)
 
+# causa4dig tiene como máximo 4 cifras. Se guarda como entero (0104 -> 104).
+if (!all(str_detect(defunciones$INEC_4, "^[0-9]{1,4}$"))) {
+  print(defunciones %>% filter(!str_detect(INEC_4, "^[0-9]{1,4}$")) %>% distinct(anio, INEC_4))
+  stop("Hay códigos de causa que no son numéricos de 1 a 4 cifras.")
+}
+defunciones <- defunciones %>% mutate(INEC_4 = as.integer(INEC_4))
+
 causas_validas <- defunciones %>%
   filter(region != "Costa Rica") %>%
-  distinct(region, anio, CIE10_4)
+  distinct(region, anio, INEC_4)
 
 base_final <- defunciones %>%
   filter(region != "Costa Rica") %>%
   mutate(edad = armonizar_edad(edad)) %>%
-  group_by(region, anio, sexo, edad, CIE10_4) %>%
+  group_by(region, anio, sexo, edad, INEC_4) %>%
   summarise(mortalidad = sum(mortalidad, na.rm = TRUE), .groups = "drop") %>%
   complete(
-    region, anio, CIE10_4, edad, sexo,
+    region, anio, INEC_4, edad, sexo,
     fill = list(mortalidad = 0)
   ) %>%
-  semi_join(causas_validas, by = c("region", "anio", "CIE10_4")) %>%
+  semi_join(causas_validas, by = c("region", "anio", "INEC_4")) %>%
   mutate(
-    region = factor(region, levels = orden_regiones),
+    region = factor(region, levels = orden_provincias),
     sexo   = factor(sexo, levels = c("Hombre", "Mujer")),
     edad   = factor(edad, levels = orden_edades)
   ) %>%
-  arrange(anio, region, as.integer(CIE10_4), edad, sexo) %>%
-  select(edad, sexo, anio, region, CIE10_4, mortalidad)
+  arrange(anio, region, INEC_4, edad, sexo) %>%
+  select(edad, sexo, anio, region, INEC_4, mortalidad)
 
-write_csv(
-  base_final,
-  file.path(carpeta, "mortalidad_cie10_2015_2025.csv")
-)
+if (anyNA(base_final$region) || anyNA(base_final$edad) || anyNA(base_final$sexo)) {
+  stop("Hay provincias, edades o sexos fuera de los niveles esperados.")
+}
+
+write_csv(base_final, salida$cie10)
 
 cat("Filas:", nrow(base_final), "\n")
 cat("Años:", paste(sort(unique(base_final$anio)), collapse = ", "), "\n")

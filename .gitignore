@@ -15,7 +15,7 @@ renv/staging/
 
 # Bases de datos y datos procesados — NO COMPARTIR
 bd/
-data-raw/
+data-raw/*
 data/processed/
 data/dictionary/*.csv
 *.csv
