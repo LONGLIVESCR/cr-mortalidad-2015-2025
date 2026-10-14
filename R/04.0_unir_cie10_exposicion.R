@@ -19,7 +19,7 @@
 #   - mx = mortalidad / exposicion
 #   - mx_1000 = mx * 1000
 #   - La fila de edad "Total" no existe en la quinquenal.
-#     Su exposición es la suma de las edades con población (sin Ignorada).
+#     Su exposición es la suma de las edades con población se excluye Ignorada.
 # =============================================================================
 
 library(dplyr)

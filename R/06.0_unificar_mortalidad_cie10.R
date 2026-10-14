@@ -1,16 +1,11 @@
 # =============================================================================
-# Unificar la base de mortalidad con el diccionario INEC - CIE-10
+# Unificar la base de mortalidad con el diccionario INEC - CIE10
 #
 # - La base (salida de 04) trae INEC_4: el código numérico REDATAM causa4dig
 #   (104, 921, 1044...). Desde el script 03 ya se llama así.
 # - Se agrega a la par la columna CIE10_4 (categoría CIE-10 de 3 caracteres:
 #   A04, I21, J44...), tomada del diccionario según INEC_4 y año.
-# - No se duplican filas: el diccionario se reduce a una fila por año e INEC_4
-#   antes de unir. Nunca se une a nivel de subcategoría (el cuarto carácter
-#   no existe en causa4dig).
-# - Un código sin pareja en el diccionario de su año detiene el script, salvo
-#   que esté en excepciones_inec4 (R/00_config.R). Solo esos se completan con
-#   la regla 01=A ... 26=Z.
+# - Un código sin pareja en el diccionario de su año detiene el script
 # =============================================================================
 
 library(dplyr)
@@ -22,10 +17,6 @@ archivo_base <- salida$cie10_mx
 archivo_dic  <- salida$diccionario
 archivo_sal  <- salida$unificada
 
-# Todo se lee como texto para no alterar ningún valor: mx y mx_1000 vienen con
-# 10 decimales fijos (decimal_fijo en 04_unir_cie10_exposicion.R) y si se leen
-# como número, write_csv los reescribe con otro formato (p. ej. 6.4612e-05).
-# Este script NO recalcula mx ni mx_1000: solo agrega CIE10_4.
 base <- read_csv(archivo_base, col_types = cols(.default = col_character()))
 dic  <- read_csv(archivo_dic, col_types = cols(codigo_redatam = col_character(),
                                                INEC_4 = col_integer(),

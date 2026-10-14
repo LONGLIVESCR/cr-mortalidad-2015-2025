@@ -2,7 +2,7 @@
 # Diccionario del Excel del INEC con el código CIE-10 separado del nombre.
 # Columnas: codigo_redatam, INEC_4, CIE10_4, CIE10, nombre_cie10, anio.
 # Una fila por subcategoría (CIE10). Para unir con la base de mortalidad se usa
-# INEC_4 (o CIE10_4) + anio; cada INEC_4 trae varias filas (una por subcategoría).
+# INEC_4 (o CIE10_4) + anio; cada INEC_4 trae varias filas.
 #
 # 2015-2016  → lista Ed2008
 # 2017-2020  → lista Ed2015
@@ -42,9 +42,7 @@ leer_lista <- function(ruta) {
   raw |>
     mutate(codigo_redatam = trimws(codigo_redatam)) |>
     # Solo filas de datos: código numérico de 4-5 dígitos y nombre presente.
-    # Esto descarta encabezados sin depender de cuántas filas ocupan.
     filter(grepl("^[0-9]{4,5}$", codigo_redatam), !is.na(causa_completa)) |>
-    # Si Excel guardó el código como número, se le devuelve el cero inicial.
     mutate(codigo_redatam = formatC(as.integer(codigo_redatam), width = 5, flag = "0")) |>
     separar_cie10()
 }
@@ -57,8 +55,7 @@ leer_lista <- function(ruta) {
 # - CIE10:        subcategoría CIE-10 de 4 caracteres (A040), calculada desde
 #                 codigo_redatam (01=A ... 26=Z). Así no se copian los errores de
 #                 escritura del INEC (03818 viene rotulado "C819", pero es C818).
-# - nombre_cie10: nombre de la subcategoría (texto después del PRIMER guion; los
-#                 nombres con guiones internos, p. ej. "HTLV-1", no se cortan).
+
 separar_cie10 <- function(df) {
   m <- regmatches(df$causa_completa,
                   regexec("^\\s*[A-Z][0-9]{2}[0-9X]?\\s*-\\s*(.*)$", df$causa_completa))

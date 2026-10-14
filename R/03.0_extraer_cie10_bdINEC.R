@@ -3,10 +3,9 @@
 # Costa Rica, 2015-2025
 # =============================================================================
 #
-# Entrada (dir_raw, ver R/00_config.R)
 #   Defunciones_YYYY.xlsx
 #   Misma estructura INEC: bloques Hombres / Mujeres por provincia,
-#   filas = código de causa, columnas = grupos de edad.
+#   filas = código de causa, columnas = grupos de edad quinquenal y menores a 1 anio.
 #
 # Salida (dir_procesados)
 #   Un solo CSV, todos los años:
@@ -14,12 +13,11 @@
 #
 # Columnas
 #   edad       0 | 1-4 | 5-9 | ... | 85-89 | 90 años y más | Edad ignorada | Total
-#   sexo       Hombre | Mujer
+#   sexo       Hombre, Mujer y Total
 #   anio       año de registro
-#   region     provincia de residencia (sin el total nacional)
+#   region     provincia de residencia
 #   INEC_4     código numérico REDATAM causa4dig, como entero (104, 921, 1044...).
-#              NO es todavía el código CIE-10: la categoría CIE-10 (A04, I21,
-#              J44...) se agrega en el script 06.
+#              NO es todavía el código CIE-10
 #   mortalidad defunciones
 #
 # Edades

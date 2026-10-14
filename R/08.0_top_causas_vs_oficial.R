@@ -2,19 +2,37 @@
 # Principales causas de muerte (categoría CIE-10) por año y comparación con
 # cifras oficiales del INEC.
 #
-# Entrada:  bd/bdProcces/mortalidad_inec_cie10_mx_2015_2025.csv
-# Salida:   imprime las comparaciones y guarda bd/bdProcces/top10_causas_2015_2025.csv
+# Entrada:  mortalidad_inec_cie10_mx_2015_2025.csv (generada por el script 06)
+# Salida:   imprime comparaciones y guarda:
+#           - top10_causas_2015_2025.csv
+#           - top10_causas_sexo_2015_2025.csv
 #
-# Cifras oficiales usadas como control:
-#   - Total de defunciones 2017-2024: casos de los microdatos públicos del INEC
-#     (ANDA, catálogos 298 y 377). 2015: total de la exportación REDATAM 2015.
-#   - Top 10 de 2015 y 2019: calculado directamente de las exportaciones REDATAM
-#     del INEC (Defunciones_2015.xlsx y Defunciones_2019.xlsx).
-#   - Otros años: llena oficial_top10_manual.csv con el Cuadro 3.27 / Figura 3.2
-#     de "Estadísticas Vitales" de cada año (INEC usa "categorías", el mismo
-#     nivel CIE-10 de 3 caracteres que esta base).
-#   - El INEC registró de verdad a una mujer con el código 363 (C63, órganos 
-#     genitales masculinos)
+# Cifras oficiales de control (transcritas a mano, no generadas por el pipeline):
+#
+# 1. Totales de defunciones por año
+#    - 2015: total de la exportación REDATAM del INEC (Defunciones_2015.xlsx).
+#    - 2017–2024: conteos de casos de los microdatos públicos del INEC,
+#      descargados del catálogo de metadatos y microdatos:
+#        https://sistemas.inec.cr/nada5.4/index.php/catalog
+#      (Catálogos 298 y 377 en el momento de la extracción).
+#      Página general de bases de datos:
+#        https://inec.cr/estadisticas-fuentes/bases-datos-documentacion
+#    - 2016 y 2025: no se incluyeron cifras oficiales de control
+#      (2016 no se encontró un total claro; 2025 son datos preliminares).
+#
+# 2. Top 10 de causas (2015 y 2019)
+#    Calculados directamente a partir de las exportaciones REDATAM del INEC
+#    (Defunciones_2015.xlsx y Defunciones_2019.xlsx). Se contaron las
+#    defunciones por categoría CIE-10 (3 caracteres) y se tomaron las 10
+#    más frecuentes (total y por sexo).
+#
+# 3. Otros años (opcional)
+#    El script puede leer un archivo oficial_top10_manual.csv con cifras
+#    tomadas de las publicaciones "Estadísticas Vitales" del INEC
+#    (Cuadro 3.27 / Figura 3.2). Este archivo no está en el repositorio.
+#
+# Nota: El INEC registró de verdad a una mujer con el código 363
+# (C63, órganos genitales masculinos).
 # =============================================================================
 
 library(dplyr)

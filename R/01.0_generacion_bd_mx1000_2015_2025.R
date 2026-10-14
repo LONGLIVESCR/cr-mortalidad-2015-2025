@@ -8,10 +8,10 @@
 # Una tabla lista para análisis, con una fila por combinación de:
 #
 #   edad        edad en años cumplidos
-#   sexo        Hombre, Mujer o Total
+#   sexo        Hombre, Mujer y Total
 #   anio        año
 #   region      provincia de residencia
-#   exposicion  población (personas)
+#   exposicion  población (estimacion de personas vivas en cada anio)
 #   mortalidad  número de defunciones
 #   mx          mortalidad / exposicion
 #   mx_1000     la misma tasa por 1 000 habitantes
@@ -25,9 +25,8 @@
 #    Defunciones_edadessimples_2015.xlsx ... 2025.xlsx
 #    (sexo × edad × provincia).
 #
-# Cómo leer este archivo 
+# Lectura del archivo 
 # -------------------------------------
-# Cada bloque grande es un paso.
 # Primero se declara la carpeta y las reglas.
 # Después se lee la población.
 # Después se leen las muertes.
@@ -45,10 +44,9 @@ options(scipen = 999)
 
 # -----------------------------------------------------------------------------
 # Configuración
-# Cambie solo esta carpeta si los Excel están en otro lugar.
 # -----------------------------------------------------------------------------
 
-carpeta <- "C:dirección de la carpeta con todas las tablas excel"
+carpeta <- "C:ingrese aquí ladirección de la carpeta con todas las tablas excel"
 
 archivo_poblacion <- file.path(
   carpeta,
@@ -71,9 +69,10 @@ columnas_sexo_c10 <- list(
 # =============================================================================
 # PASO 1. Leer la población 
 # =============================================================================
-# La hoja C10 no viene como una tabla normal.
+# La hoja C10 no es una tabla normal.
 # Cada año es un bloque: una fila con el año, una con las edades
 # y siete filas con las provincias.
+# Cada uno de sus bloques de informacion contiene formulas de Excel.
 # Este paso convierte eso en una fila por edad, sexo, año y provincia.
 
 datos_pob <- read_excel(
@@ -161,8 +160,6 @@ poblacion <- extraer_poblacion_c10() %>%
 # Reglas de limpieza:
 #   - el guion del INEC significa cero muertes
 #   - las edades 90, 91, 92... se suman en "90 años y más"
-#   - se quita la fila Total de edad (es solo la suma)
-#   - no se usa la columna nacional Total
 #   - la edad Ignorada se conserva
 
 extraer_un_anio <- function(ruta_excel) {
@@ -261,8 +258,8 @@ mortalidad <- map_dfr(archivos_defunciones, extraer_un_anio) %>%
 # Se pegan las dos tablas por las mismas cuatro llaves:
 # edad + sexo + anio + region.
 #
-# mx      = muertes / población          (para tablas de mortalidad)
-# mx_1000 = muertes / población × 1 000  (para describir el nivel)
+# mx      = muertes / población          
+# mx_1000 = muertes / población × 1 000  
 #
 # Si no hay población (casi siempre edad Ignorada), la tasa queda vacía.
 
@@ -301,15 +298,4 @@ write_csv(
   base_mortalidad,
   file.path(carpeta, "CR_base_mortalidad_2015_2025.csv")
 )
-
-
-# =============================================================================
-# Comprobación breve
-# =============================================================================
-
-cat("Archivos de defunciones leídos:", length(archivos_defunciones), "\n")
-cat("Filas de la base final:", nrow(base_mortalidad), "\n")
-cat("Años:", paste(sort(unique(base_mortalidad$anio)), collapse = ", "), "\n")
-cat("Filas sin exposición:", sum(is.na(base_mortalidad$exposicion)), "\n")
-print(head(base_mortalidad, 12))
 

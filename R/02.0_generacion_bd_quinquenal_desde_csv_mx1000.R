@@ -29,7 +29,6 @@
 #   - Desde 5 hasta 89: grupos de 5 años.
 #   - 90 años y más se mantiene.
 #   - Ignorada se mantiene; no tiene exposición comparable.
-#   - Se suman D y E. No se promedian tasas.
 #   - mx se recalcula después de sumar.
 # =============================================================================
 
@@ -88,7 +87,7 @@ grupo_edad <- function(edad) {
 
 
 # -----------------------------------------------------------------------------
-# Escribir tasas en decimal fijo (evita 1.76e-4 en el CSV)
+# Escribir tasas en decimal fijo 
 # -----------------------------------------------------------------------------
 
 decimal_fijo <- function(x, decimales = 10) {
@@ -104,7 +103,7 @@ base_simple <- read_csv(archivo_entrada, show_col_types = FALSE)
 
 
 # -----------------------------------------------------------------------------
-# 2. Agrupar y recalcular mx
+# 2. Agrupa y recalcula mx
 # -----------------------------------------------------------------------------
 
 base_quinquenal <- base_simple %>%
@@ -149,14 +148,3 @@ for (anio_i in sort(unique(base_quinquenal$anio))) {
     file.path(carpeta, paste0("mortalidad_mx_1000_quinquenal_", anio_i, ".csv"))
   )
 }
-
-
-# -----------------------------------------------------------------------------
-# 4. Comprobación
-# -----------------------------------------------------------------------------
-
-cat("Filas de entrada (edad simple):", nrow(base_simple), "\n")
-cat("Filas de salida (quinquenal):  ", nrow(base_quinquenal), "\n")
-cat("Grupos de edad:\n")
-print(levels(base_quinquenal$edad))
-print(head(base_export, 8))

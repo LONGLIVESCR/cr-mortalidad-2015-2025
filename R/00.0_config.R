@@ -1,24 +1,16 @@
 # =============================================================================
-# Configuración común del pipeline
+# Configuración común del codigo reproducible
 # Costa Rica, mortalidad 2015-2025
 # =============================================================================
 #
 # Todos los scripts de R/ empiezan con:
 #
-#   source("R/00_config.R")
-#
-# y se corren con el directorio de trabajo en la raíz del repositorio
-# (abriendo el .Rproj, o con `Rscript R/01_...R` desde la raíz).
-#
-# Aquí viven:
-#   - las carpetas de datos (rutas relativas, nunca rutas de una máquina)
-#   - los nombres de todos los archivos de entrada y salida
-#   - las constantes compartidas (provincias, sexos, grupos de edad)
+# Contenido:
+#   - carpetas de datos (rutas relativas)
+#   - nombres de todos los archivos de entrada y salida
+#   - constantes compartidas (provincias, sexos, grupos de edad)
 #   - funciones pequeñas que usan varios scripts
 #
-# Si los datos están en otra carpeta, no edite los scripts: defina las
-# variables de entorno CR_MORT_DATA_RAW y CR_MORT_PROCESSED (por ejemplo en
-# un archivo .Renviron que no se sube al repositorio).
 # =============================================================================
 
 options(scipen = 999)
@@ -31,7 +23,7 @@ options(scipen = 999)
 # Excel originales del INEC (no se suben al repositorio; ver data-raw/README.md)
 dir_raw <- Sys.getenv("CR_MORT_DATA_RAW", unset = "data-raw")
 
-# CSV generados por el pipeline (no se suben al repositorio)
+# CSV generados por el codigo (no se suben al repositorio)
 dir_procesados <- Sys.getenv("CR_MORT_PROCESSED", unset = file.path("data", "processed"))
 
 if (!dir.exists(dir_raw)) {
@@ -42,11 +34,10 @@ dir.create(dir_procesados, recursive = TRUE, showWarnings = FALSE)
 
 
 # -----------------------------------------------------------------------------
-# Archivos de entrada (en dir_raw)
+# Archivos de entrada 
 # -----------------------------------------------------------------------------
 
-# Estimaciones de población del INEC, hoja C10 (el doble punto es el nombre
-# con que el archivo se usa en el pipeline; verifíquelo contra su descarga).
+# Estimaciones de población del INEC, hoja C10 
 archivo_poblacion <- file.path(dir_raw, "poblacion_costarica_inec_2000-2050..xlsx")
 
 # Defunciones por sexo × edad simple × provincia, un Excel por año (script 01)
@@ -99,7 +90,7 @@ salida <- list(
 
 
 # -----------------------------------------------------------------------------
-# Constantes compartidas (convenciones INEC)
+# Constantes del INEC
 # -----------------------------------------------------------------------------
 
 # Provincias en el orden oficial del INEC (códigos 1 a 7)
@@ -136,8 +127,7 @@ edades_originales_causa <- c(
 # Funciones compartidas
 # -----------------------------------------------------------------------------
 
-# Tasas en decimal fijo para el CSV (evita 1.76e-4).
-# options(scipen) NO afecta a readr::write_csv(), por eso se formatea aquí.
+# Tasas en decimal fijo para el CSV (evita numero en notacion cientifica).
 decimal_fijo <- function(x, decimales = 10) {
   ifelse(is.na(x), NA_character_, sprintf(paste0("%.", decimales, "f"), x))
 }
@@ -161,8 +151,6 @@ grupo_edad <- function(edad) {
 # Las dos primeras cifras son la posición de la letra en el alfabeto
 # (01 = A ... 26 = Z) y las dos últimas son los dígitos de la categoría.
 #   104 -> A04 | 921 -> I21 | 1044 -> J44 | 2107 -> U07
-# Solo da la CATEGORÍA. El cuarto carácter (subcategoría) no existe en
-# causa4dig y no se reconstruye.
 inec4_a_cie10 <- function(inec4) {
   n <- as.integer(inec4)
   posicion <- n %/% 100
@@ -176,7 +164,7 @@ inec4_a_cie10 <- function(inec4) {
 
 # Excepciones conocidas: códigos de la base que NO están en la lista INEC de
 # su año. Solo estos se completan con la regla; cualquier otro detiene el
-# script 06. Agregar una fila aquí exige documentarla en el README.
+# creo que es la A(H1N1)
 excepciones_inec4 <- data.frame(
   anio   = c(2015L, 2016L),
   INEC_4 = c(1009L, 1009L),

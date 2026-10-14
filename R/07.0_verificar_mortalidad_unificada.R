@@ -1,6 +1,6 @@
 # =============================================================================
 # Verificar la base unificada mortalidad_inec_cie10_mx_2015_2025.csv
-# Solo lee e imprime. No guarda nada.
+# Solo lee e imprime. 
 #
 # Compara contra la base original (mortalidad_cie10_mx_2015_2025.csv) y el
 # diccionario (diccionario_inec_cie10_por_anio.csv).
