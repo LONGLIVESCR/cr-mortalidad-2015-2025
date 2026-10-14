@@ -11,7 +11,7 @@
 library(dplyr)
 library(readr)
 
-source("R/00_config.R")
+source("R/00.0_config.R")
 
 archivo_base <- salida$cie10_mx
 archivo_dic  <- salida$diccionario

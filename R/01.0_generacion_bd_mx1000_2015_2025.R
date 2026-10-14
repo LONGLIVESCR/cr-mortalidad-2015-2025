@@ -25,33 +25,19 @@
 #    Defunciones_edadessimples_2015.xlsx ... 2025.xlsx
 #    (sexo × edad × provincia).
 #
-# Lectura del archivo 
-# -------------------------------------
-# Primero se declara la carpeta y las reglas.
-# Después se lee la población.
-# Después se leen las muertes.
-# Después se unen y se calcula la tasa.
-# Al final se guardan los CSV.
-#
 # =============================================================================
 
 library(tidyverse)
 library(readxl)
 library(stringr)
 
-options(scipen = 999)
-
+source("R/00.0_config.R")
 
 # -----------------------------------------------------------------------------
-# Configuración
+# Configuración (tomada de 00.0_config.R)
 # -----------------------------------------------------------------------------
 
-carpeta <- "C:ingrese aquí ladirección de la carpeta con todas las tablas excel"
-
-archivo_poblacion <- file.path(
-  carpeta,
-  "poblacion_costarica_inec_2000-2050..xlsx"
-)
+archivo_poblacion <- file.path(dir_raw, "poblacion_costarica_inec_2000-2050..xlsx")
 
 orden_provincias <- c(
   "San José", "Alajuela", "Cartago", "Heredia",
@@ -238,7 +224,7 @@ extraer_un_anio <- function(ruta_excel) {
 }
 
 archivos_defunciones <- list.files(
-  path       = carpeta,
+  path       = dir_raw,
   pattern    = "^Defunciones_edadessimples_\\d{4}\\.xlsx$",
   full.names = TRUE
 ) %>%
@@ -284,18 +270,20 @@ base_mortalidad <- mortalidad %>%
 
 
 # =============================================================================
-# PASO 4. Guardar
+# PASO 4. Guardar (nombres unificados desde la config)
 # =============================================================================
 
+# Guardar por año
 walk(sort(unique(base_mortalidad$anio)), function(anio_i) {
   write_csv(
     filter(base_mortalidad, anio == anio_i),
-    file.path(carpeta, paste0("CR_base_mortalidad_", anio_i, ".csv"))
+    salida$edad_simple_anio(anio_i)
   )
 })
 
-write_csv(
-  base_mortalidad,
-  file.path(carpeta, "CR_base_mortalidad_2015_2025.csv")
-)
+# Guardar base consolidada
+write_csv(base_mortalidad, salida$edad_simple)
 
+cat("\nGuardado:\n")
+cat("  ", salida$edad_simple, "\n")
+cat("  Archivos por año en", dir_procesados, "\n")

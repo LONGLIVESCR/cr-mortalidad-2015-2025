@@ -38,7 +38,7 @@ library(readxl)
 library(stringr)
 library(purrr)
 
-source("R/00_config.R")
+source("R/00.0_config.R")
 
 orden_edades <- c(grupos_edad_quinquenal, "Edad ignorada", "Total")
 
