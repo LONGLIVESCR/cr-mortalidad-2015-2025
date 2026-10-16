@@ -1,6 +1,6 @@
 # LONGLIVESCR — Mortalidad Costa Rica 2015–2025
 
-Pipeline reproducible para el análisis de mortalidad de Costa Rica (2015–2025) a partir de tabulations REDATAM del Instituto Nacional de Estadística y Censos (INEC).
+Código reproducible para el análisis de mortalidad de Costa Rica (2015–2025) a partir de tabulations REDATAM del Instituto Nacional de Estadística y Censos (INEC).
 
 ## Objetivo
 
