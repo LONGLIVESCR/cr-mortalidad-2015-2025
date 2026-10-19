@@ -107,8 +107,8 @@ base_final <- causas %>%
     sexo    = factor(sexo, levels = c("Hombre", "Mujer")),
     region  = factor(region, levels = orden_regiones)
   ) %>%
-  arrange(anio, region, as.integer(CIE10_4), edad, sexo) %>%
-  select(edad, sexo, anio, region, CIE10_4, mortalidad, exposicion, mx, mx_1000)
+  arrange(anio, region, as.integer(INEC_4), edad, sexo) %>%
+  select(edad, sexo, anio, region, INEC_4, mortalidad, exposicion, mx, mx_1000)
 
 base_export <- base_final %>%
   mutate(

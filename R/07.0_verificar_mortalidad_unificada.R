@@ -38,8 +38,8 @@ revisar("Mismo número de filas que la original", nrow(unif) == nrow(orig),
 # ---- 2. Nada cambió respecto a la original ----------------------------------
 cat("\n== 2. Valores iguales a la original (fila por fila)\n")
 if (nrow(unif) == nrow(orig)) {
-  revisar("INEC_4 = CIE10_4 de la original", all(unif$INEC_4 == orig$CIE10_4),
-          which(unif$INEC_4 != orig$CIE10_4))
+  revisar("INEC_4 igual a la original", all(unif$INEC_4 == orig$INEC_4),
+          which(unif$INEC_4 != orig$INEC_4))
   for (col in c("edad","sexo","anio","region","mortalidad","exposicion","mx","mx_1000")) {
     a <- unif[[col]]; b <- orig[[col]]
     iguales <- (is.na(a) & is.na(b)) | (!is.na(a) & !is.na(b) & a == b)

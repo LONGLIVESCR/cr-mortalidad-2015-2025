@@ -94,7 +94,7 @@ cat("\n===== Ejemplo San José, Hombre, 2015, edad 0 =====\n")
 print(
   final %>%
     filter(anio == 2015, region == "San José", sexo == "Hombre", edad == "0", mortalidad > 0) %>%
-    select(CIE10_4, mortalidad, exposicion, mx, mx_1000) %>%
+    select(INEC_4, mortalidad, exposicion, mx, mx_1000) %>%
     head(8)
 )
 
