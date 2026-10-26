@@ -21,7 +21,7 @@
 #     Total se reparte con sus propios datos y se avisa.
 #   - Se agrega mortalidad_observada con el conteo original del INEC y se
 #     recalculan mx (por persona) y mx_1000 (por 1 000), con el mismo
-#     formato en las dos bases, aunque la base de entrada traiga otra cosa.
+#     formato en las dos bases.
 #   - Después de repartir y verificar, se eliminan las filas Ignorada (ya
 #     con 0 defunciones). Por eso, en las bases nuevas, mortalidad_observada
 #     suma menos que mortalidad: la diferencia son las defunciones repartidas.
