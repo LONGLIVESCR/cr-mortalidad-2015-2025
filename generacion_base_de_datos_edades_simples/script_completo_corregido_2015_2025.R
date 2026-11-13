@@ -26,7 +26,7 @@
 #  * Exposición viene SOLO del CSV. Se recalculan mx = muertes / exposición
 #    y mx_1000 = mx * 1000; NO se importa mx del CSV (allí ya está por 1000).
 #  * Claves de diccionario: anio + INEC_4; evita la relación many-to-many.
-#  * No se reparten automáticamente edades ignoradas ni se inventan valores.
+# La edad ignorada de cada causa se reparte con la distribución por edad de todas las causas.
 # =============================================================================
 
 # ---- 0. INSTALAR UNA VEZ (si falta alguno): ----------------------------------
@@ -193,7 +193,7 @@ leer_def <- function(anio) {
   if (any(rowSums(as.matrix(x[, ..provincias])) != x$total_col))
     stop('Columnas provinciales no cuadran con Total de fila en ', anio)
 
-  # Edad original 999 = ignorada. 90,91,... -> 90 años y más.
+  # Edad original 999 detiene la corrida. 90,91,... -> 90 años y más.
   edad_num <- suppressWarnings(as.integer(x$edad_original))
   valido <- x$edad_original == 'Total' |
             grepl('ignor', x$edad_original, ignore.case=TRUE) |
@@ -405,6 +405,7 @@ cat('Archivos anuales y controles: ',carpeta_salida,'\n')
 # 6. REDISTRIBUIR EDADES IGNORADAS POR CAUSA USANDO REFERENCIA AGREGADA
 #    y reemplazar mortalidad, mx y mx_1000 (SIN forzar igualdad de fuentes)
 # =============================================================================
+# Consultar al profe para confirmar la aceptación de este metodo.
 # Agregar DESPUES de la seccion 5 original.
 # Cada causa conserva sus muertes observadas en mortalidad_observada.
 # La referencia aporta la DISTRIBUCION por edad dentro de sexo/anio/provincia,
@@ -636,19 +637,3 @@ cat('IGNORADAS SIN REPARTIR: ', archivo_grupos_sin_pesos, '\n', sep = '')
 # Para abrir, siempre que la RAM permita cargar el CSV:
 # base_final_repartida <- data.table::fread(archivo_final_repartido)
 # View(base_final_repartida)
-
-library(data.table)
-
-# Cargar la base consolidada
-base_final <- fread(
-  "C:/Users/User/Downloads/defunciones_redatam_sin_procesar/salida_edad_simple/mortalidad_inec_cie10_mx_edad_simple_2015_2025.csv"
-)
-
-# Abrir la base en el visor de RStudio
-View(base_final)
-
-# Guardar la base definitiva como RData
-save(
-  base_final,
-  file = "C:/Users/User/Downloads/defunciones_redatam_sin_procesar/salida_edad_simple/BASE_DEFINITIVA.RData"
-)
