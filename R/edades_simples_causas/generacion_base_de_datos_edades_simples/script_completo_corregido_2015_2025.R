@@ -5,7 +5,7 @@
 # funciones_edad_simple.R, en esta misma carpeta.
 #
 # CÓMO CORRERLO (desde la raíz del repositorio):
-#   Rscript generacion_base_de_datos_edades_simples/script_completo_corregido_2015_2025.R \
+#   Rscript R/edades_simples_causas/generacion_base_de_datos_edades_simples/script_completo_corregido_2015_2025.R \
 #           --entrada=RUTA/defunciones_redatam_sin_procesar
 #   Opcionales: --salida=CARPETA  --referencia=ARCHIVO.csv
 #   En vez de argumentos se pueden usar las variables de entorno
@@ -64,7 +64,7 @@ carpeta_script <- local({
     arg <- grep('^--file=', commandArgs(FALSE), value = TRUE)
     if (length(arg)) archivo <- sub('^--file=', '', arg[1])
   }
-  if (is.null(archivo)) 'generacion_base_de_datos_edades_simples'
+  if (is.null(archivo)) 'R/edades_simples_causas/generacion_base_de_datos_edades_simples'
   else dirname(normalizePath(archivo))
 })
 # Las etiquetas ('90 años y más', 'San José', 'Limón') necesitan una sesión
