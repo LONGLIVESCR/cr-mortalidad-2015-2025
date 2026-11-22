@@ -14,19 +14,11 @@ library(readxl)
 library(dplyr)
 library(readr)
 
-carpeta_excel <- "dirección de la carpeta con los archivos Excel"
-carpeta_datos <- "dirección de la carpeta con los datos procesados"
+source(here::here("R", "00.0_config.R"))
 
-listas <- data.frame(
-  archivo = c(
-    "Causa de muerte CIE-10 Ed2008 utilizada para período 2000-2016.xlsx",
-    "Causa de muerte CIE-10 Ed2015 utilizada del 2017-2020.xlsx",
-    "Grupos Causa de Muerte 2021 en adelante.xlsx"
-  ),
-  anio_min = c(2015L, 2017L, 2021L),
-  anio_max = c(2016L, 2020L, 2025L),
-  stringsAsFactors = FALSE
-)
+# Los Excel de las listas están en dir_raw. La tabla de archivos y años
+# (listas_inec) viene de la config.
+listas <- listas_inec
 
 leer_lista <- function(ruta) {
   raw <- read_excel(
@@ -72,8 +64,8 @@ separar_cie10 <- function(df) {
 }
 
 diccionario <- bind_rows(lapply(seq_len(nrow(listas)), function(i) {
-  ruta <- file.path(carpeta_excel, listas$archivo[i])
-  if (!file.exists(ruta)) stop("No existe: ", ruta)
+  ruta <- file.path(dir_raw, listas$archivo[i])
+  validar_archivos(ruta, ayuda = "Ponga los Excel del INEC en data-raw/ o defina CR_MORT_DATA_RAW.")
 
   message("Leyendo: ", listas$archivo[i])
   raw <- leer_lista(ruta)
@@ -108,7 +100,7 @@ cat("OK: cada INEC_4 corresponde a una sola CIE10_4.\n")
 # ---- Guardar ----------------------------------------------------------------
 write_csv(
   diccionario,
-  file.path(carpeta_datos, "diccionario_inec_cie10_por_anio.csv")
+  salida$diccionario
 )
 
 cat("Filas:", nrow(diccionario), "\n")

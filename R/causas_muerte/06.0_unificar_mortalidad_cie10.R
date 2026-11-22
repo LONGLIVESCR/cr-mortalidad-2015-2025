@@ -11,11 +11,13 @@
 library(dplyr)
 library(readr)
 
-source("R/00.0_config.R")
+source(here::here("R", "00.0_config.R"))
 
 archivo_base <- salida$cie10_mx
 archivo_dic  <- salida$diccionario
 archivo_sal  <- salida$unificada
+
+validar_archivos(c(archivo_base, archivo_dic), ayuda = "Corra antes 04.0 y 05.0.")
 
 base <- read_csv(archivo_base, col_types = cols(.default = col_character()))
 dic  <- read_csv(archivo_dic, col_types = cols(codigo_redatam = col_character(),

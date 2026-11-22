@@ -5,18 +5,21 @@
 library(dplyr)
 library(readr)
 
-options(scipen = 999)
+source(here::here("R", "00.0_config.R"))
 
-carpeta <- "dirección de la carpeta"
+validar_archivos(
+  c(salida$cie10, salida$quinquenal, salida$cie10_mx),
+  ayuda = "Corra antes 02.0, 03.0 y 04.0."
+)
 
 causas <- read_csv(
-  file.path(carpeta, "mortalidad_cie10_2015_2025.csv"),
+  salida$cie10,
   show_col_types = FALSE
 ) %>%
   mutate(edad = if_else(edad == "Edad ignorada", "Ignorada", as.character(edad)))
 
 mx_base <- read_csv(
-  file.path(carpeta, "mortalidad_mx_1000_quinquenal_2015_2025.csv"),
+  salida$quinquenal,
   show_col_types = FALSE
 ) %>%
   filter(sexo %in% c("Hombre", "Mujer")) %>%
@@ -30,7 +33,7 @@ mx_base <- read_csv(
   )
 
 final <- read_csv(
-  file.path(carpeta, "mortalidad_cie10_mx_2015_2025.csv"),
+  salida$cie10_mx,
   show_col_types = FALSE
 ) %>%
   mutate(

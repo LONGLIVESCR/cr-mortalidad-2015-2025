@@ -3,10 +3,10 @@
 # Costa Rica, provincias, 2015-2025
 # =============================================================================
 #
-# ENTRADA
+# ENTRADA (dir_procesados, ver 00.0_config.R)
 #   mortalidad_mx_1000_2015_2025.csv
 #
-# SALIDA
+# SALIDA (dir_procesados)
 #   mortalidad_mx_1000_quinquenal_2015_2025.csv
 #   Un archivo por año: mortalidad_mx_1000_quinquenal_YYYY.csv
 #
@@ -35,71 +35,42 @@
 library(dplyr)
 library(readr)
 
-options(scipen = 999)
+source(here::here("R", "00.0_config.R"))
 
 
 # -----------------------------------------------------------------------------
-# Configuración
+# Configuración (tomada de 00.0_config.R)
 # -----------------------------------------------------------------------------
+# orden_provincias, orden_sexos, grupo_edad() y decimal_fijo() vienen de la
+# config. grupo_edad() asigna el grupo quinquenal a cada edad simple.
 
-carpeta <- "dirección de la carpeta"
+archivo_entrada <- salida$edad_simple
+archivo_salida  <- salida$quinquenal
 
-archivo_entrada <- file.path(carpeta, "mortalidad_mx_1000_2015_2025.csv")
-archivo_salida  <- file.path(carpeta, "mortalidad_mx_1000_quinquenal_2015_2025.csv")
-
-orden_provincias <- c(
-  "San José", "Alajuela", "Cartago", "Heredia",
-  "Guanacaste", "Puntarenas", "Limón"
-)
-
-orden_edades <- c(
-  "0", "1-4",
-  "5-9", "10-14", "15-19", "20-24", "25-29",
-  "30-34", "35-39", "40-44", "45-49", "50-54",
-  "55-59", "60-64", "65-69", "70-74", "75-79",
-  "80-84", "85-89",
-  "90 años y más",
-  "Ignorada"
-)
-
-orden_sexos <- c("Hombre", "Mujer", "Total")
-
-
-# -----------------------------------------------------------------------------
-# Asignar grupo de edad
-# -----------------------------------------------------------------------------
-
-grupo_edad <- function(edad) {
-
-  edad <- as.character(edad)
-  edad_num <- suppressWarnings(as.integer(edad))
-
-  case_when(
-    edad == "Ignorada"      ~ "Ignorada",
-    edad == "90 años y más" ~ "90 años y más",
-    edad == "0"             ~ "0",
-    edad_num %in% 1:4       ~ "1-4",
-    !is.na(edad_num) & edad_num >= 5 & edad_num <= 89 ~
-      paste0(5 * (edad_num %/% 5), "-", 5 * (edad_num %/% 5) + 4),
-    TRUE ~ edad
-  )
-}
-
-
-# -----------------------------------------------------------------------------
-# Escribir tasas en decimal fijo 
-# -----------------------------------------------------------------------------
-
-decimal_fijo <- function(x, decimales = 10) {
-  if_else(is.na(x), NA_character_, sprintf(paste0("%.", decimales, "f"), x))
-}
+orden_edades <- c(grupos_edad_quinquenal, "Ignorada")
 
 
 # -----------------------------------------------------------------------------
 # 1. Leer edad simple
 # -----------------------------------------------------------------------------
 
+validar_archivos(
+  archivo_entrada,
+  ayuda = "Corra antes R/edades_simples/01.0_generacion_bd_mx1000_2015_2025.R."
+)
+
 base_simple <- read_csv(archivo_entrada, show_col_types = FALSE)
+
+nombre_entrada <- basename(archivo_entrada)
+validar_columnas(
+  base_simple,
+  c("edad", "sexo", "anio", "region", "exposicion", "mortalidad"),
+  nombre_entrada
+)
+validar_anios(base_simple$anio, nombre_entrada)
+validar_valores(base_simple$sexo, orden_sexos, "sexo", nombre_entrada)
+validar_valores(base_simple$region, orden_provincias, "region", nombre_entrada)
+validar_valores(grupo_edad(base_simple$edad), orden_edades, "edad", nombre_entrada)
 
 
 # -----------------------------------------------------------------------------
@@ -145,6 +116,6 @@ write_csv(base_export, archivo_salida)
 for (anio_i in sort(unique(base_quinquenal$anio))) {
   write_csv(
     filter(base_export, anio == anio_i),
-    file.path(carpeta, paste0("mortalidad_mx_1000_quinquenal_", anio_i, ".csv"))
+    salida$quinquenal_anio(anio_i)
   )
 }
