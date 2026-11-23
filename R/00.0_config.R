@@ -43,6 +43,10 @@ dir_raw <- desde_raiz(Sys.getenv("CR_MORT_DATA_RAW", unset = "data-raw"))
 # CSV generados por el codigo (no se suben al repositorio)
 dir_procesados <- desde_raiz(Sys.getenv("CR_MORT_PROCESSED", unset = file.path("data", "processed")))
 
+# Exportaciones de REDATAM para el registro tardío: 52 Excel, 2000-2025, uno
+# por año y sexo (scripts de R/calidad_de_datos/)
+dir_registro_tardio <- desde_raiz(Sys.getenv("CR_MORT_REGISTRO_TARDIO", unset = file.path(dir_raw, "registro_tardio")))
+
 # Los scripts que leen los Excel (01, 03 y 05) revisan que existan sus
 # archivos, así que aquí no se exige la carpeta dir_raw.
 dir.create(dir_procesados, recursive = TRUE, showWarnings = FALSE)
