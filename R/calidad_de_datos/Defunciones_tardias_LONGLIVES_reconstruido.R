@@ -34,8 +34,15 @@ library(writexl)
 # 2. DEFINIR CARPETA DE TRABAJO
 # ============================================================
 
-ruta <- "/Users/jose/Desktop/UNA Proyecto/Registro_tardio"
-# o la ruta exacta que te dé Finder
+# Las rutas vienen de R/00.0_config.R. La config cambia scipen; aquí se deja
+# como estaba para que la consola y los gráficos no cambien.
+scipen_original <- getOption("scipen")
+source(here::here("R", "00.0_config.R"))
+options(scipen = scipen_original)
+
+# Carpeta con los 52 Excel de REDATAM (dir_registro_tardio en la config).
+# Para usar otra carpeta, defina CR_MORT_REGISTRO_TARDIO en ~/.Renviron.
+ruta <- dir_registro_tardio
 
 # Validar existencia de la carpeta.
 
@@ -15364,8 +15371,9 @@ cat(
 # Archivo quinquenal con redistribución de edad ignorada.
 # Esta base todavía NO tiene corrección por registro tardío.
 
-ruta_base_mortalidad <- file.path("C:/Users/mauri/OneDrive - Universidad Nacional de Costa Rica/Documentos/R projects/LONGLIVES 2020-2025/Data/Proccesed/bd_edad_ignorada_distribuida_mortalidad_subnacional/mortalidad_mx_1000_quinquenal_2015_2025_edad_repartida.csv"
-)
+# Es la salida del script 09 (R/postproceso/09.0_repartir_edad_ignorada.R),
+# que queda en dir_procesados.
+ruta_base_mortalidad <- sub("\\.csv$", "_edad_repartida.csv", salida$quinquenal)
 
 # Verificar que el archivo exista.
 if (!file.exists(ruta_base_mortalidad)) {

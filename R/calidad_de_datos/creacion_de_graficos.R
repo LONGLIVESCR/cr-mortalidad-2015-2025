@@ -1,5 +1,5 @@
 # =============================================================================
-# graficos_registro_tardio_por_edad.R
+# creacion_de_graficos.R
 #
 # Porcentaje de defunciones con registro tardío por grupo quinquenal de edad,
 # sexo, provincia y año de ocurrencia (2015-2025), a partir de los 52
@@ -12,7 +12,7 @@
 #   año x 100 (declaradas en cualquier año hasta el último disponible).
 #
 # Uso:
-#   source("graficos_registro_tardio_por_edad.R", encoding = "UTF-8")
+#   source(here::here("R", "calidad_de_datos", "creacion_de_graficos.R"), encoding = "UTF-8")
 #
 # Resultado, en la carpeta graficos_registro_tardio (junto a la de datos):
 #   registro_tardio_00_todas_las_edades.png   todas las edades, por provincia
@@ -46,8 +46,15 @@ suppressPackageStartupMessages({
 # 1. PARÁMETROS (lo único que normalmente habría que tocar)
 # -----------------------------------------------------------------------------
 
-# Carpeta con los 52 archivos Excel de REDATAM
-ruta_datos <- "/Users/jose/Desktop/UNA Proyecto/Registro_tardio"
+# Las rutas vienen de R/00.0_config.R. La config cambia scipen; aquí se deja
+# como estaba para que la consola y los gráficos no cambien.
+scipen_original <- getOption("scipen")
+source(here::here("R", "00.0_config.R"))
+options(scipen = scipen_original)
+
+# Carpeta con los 52 archivos Excel de REDATAM (dir_registro_tardio en la
+# config). Para usar otra carpeta, defina CR_MORT_REGISTRO_TARDIO en ~/.Renviron.
+ruta_datos <- dir_registro_tardio
 
 # Carpeta donde se guardan los gráficos (se crea junto a la carpeta de datos)
 carpeta_graficos <- file.path(dirname(ruta_datos), "graficos_registro_tardio")
