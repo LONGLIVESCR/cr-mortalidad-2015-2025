@@ -39,8 +39,11 @@ library(dplyr)
 library(readr)
 library(tidyr)
 
-carpeta <- "ruta de la carpeta con los datos"
-base <- read_csv(file.path(carpeta, "mortalidad_inec_cie10_mx_2015_2025.csv"),
+source(here::here("R", "00.0_config.R"))
+
+validar_archivos(salida$unificada, ayuda = "Corra antes 06.0.")
+
+base <- read_csv(salida$unificada,
                  col_types = cols(.default = col_character())) |>
   mutate(anio = as.integer(anio), mortalidad = as.numeric(mortalidad))
 
@@ -140,7 +143,7 @@ oficial_top10 <- tribble(
 
 # Opcional: valores copiados de "Estadísticas Vitales" (Cuadro 3.27 / Figura 3.2).
 # Columnas: anio,CIE10_4,defunciones_oficial
-manual <- file.path(carpeta, "oficial_top10_manual.csv")
+manual <- salida$oficial_top10_manual
 if (file.exists(manual)) {
   oficial_top10 <- bind_rows(oficial_top10,
                              read_csv(manual, col_types = cols(anio = "i", CIE10_4 = "c", defunciones_oficial = "d")))
@@ -251,6 +254,6 @@ cat("\nCasos fuera de lo esperado:\n")
 print(reparto |> filter(estado == "REVISAR") |> select(anio, CIE10_4, regla, hombres, mujeres, pct_hombres), n = 50)
 
 # ---- 5. Guardar -------------------------------------------------------------
-write_csv(top10, file.path(carpeta, "top10_causas_2015_2025.csv"))
-write_csv(top10_sexo, file.path(carpeta, "top10_causas_sexo_2015_2025.csv"))
+write_csv(top10, salida$top10)
+write_csv(top10_sexo, salida$top10_sexo)
 cat("\nGuardado:\n  top10_causas_2015_2025.csv\n  top10_causas_sexo_2015_2025.csv\n")

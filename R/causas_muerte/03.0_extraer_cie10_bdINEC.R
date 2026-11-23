@@ -38,7 +38,7 @@ library(readxl)
 library(stringr)
 library(purrr)
 
-source("R/00.0_config.R")
+source(here::here("R", "00.0_config.R"))
 
 orden_edades <- c(grupos_edad_quinquenal, "Edad ignorada", "Total")
 
@@ -154,6 +154,8 @@ print(basename(archivos))
 if (length(archivos) == 0) stop("No hay archivos Defunciones_YYYY.xlsx en ", dir_raw)
 
 defunciones <- map_dfr(archivos, extraer_defunciones)
+
+validar_anios(defunciones$anio, "Excel de defunciones por causa")
 
 # causa4dig tiene como máximo 4 cifras. Se guarda como entero (0104 -> 104).
 if (!all(str_detect(defunciones$INEC_4, "^[0-9]{1,4}$"))) {

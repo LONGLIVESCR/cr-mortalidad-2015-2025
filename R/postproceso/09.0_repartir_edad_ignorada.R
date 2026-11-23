@@ -31,23 +31,18 @@
 library(dplyr)
 library(readr)
 
-source("R/00.0_config.R")
+source(here::here("R", "00.0_config.R"))
 
 entrada <- c(
   simple     = salida$edad_simple,
   quinquenal = salida$quinquenal
 )
 
-faltan <- entrada[!file.exists(entrada)]
-if (length(faltan) > 0) {
-  stop("Faltan las bases: ", paste(faltan, collapse = ", "), ". Corra antes 01 y 02.")
-}
+validar_archivos(entrada, ayuda = "Corra antes 01 y 02.")
 
 nombre_repartida <- function(ruta) sub("\\.csv$", "_edad_repartida.csv", ruta)
 
-decimal_fijo <- function(x, decimales = 10) {
-  if_else(is.na(x), NA_character_, sprintf(paste0("%.", decimales, "f"), x))
-}
+# decimal_fijo() y grupo_edad() vienen de la config.
 
 calcular_tasas <- function(datos) {
   datos %>%
@@ -64,13 +59,15 @@ calcular_tasas <- function(datos) {
 # Solo se necesitan estas columnas; mx y mx_1000 se recalculan.
 leer_base <- function(ruta) {
   base <- read_csv(ruta, col_types = cols(.default = col_character()))
-  faltan_col <- setdiff(c("edad", "sexo", "anio", "region", "exposicion", "mortalidad"), names(base))
-  if (length(faltan_col) > 0) {
-    stop(ruta, " no tiene las columnas: ", paste(faltan_col, collapse = ", "))
-  }
+  validar_columnas(
+    base,
+    c("edad", "sexo", "anio", "region", "exposicion", "mortalidad"),
+    basename(ruta)
+  )
   if ("mortalidad_observada" %in% names(base)) {
     stop(ruta, " ya trae la edad ignorada repartida.")
   }
+  validar_anios(base$anio, basename(ruta))
   base %>%
     mutate(
       anio       = as.integer(anio),
@@ -185,18 +182,9 @@ conserva <- function(datos) {
 }
 
 # La quinquenal repartida es la suma de la edad simple repartida
-grupo_quinquenal <- function(edad) {
-  e <- suppressWarnings(as.integer(edad))
-  case_when(
-    is.na(e) ~ edad,
-    e == 0   ~ "0",
-    e <= 4   ~ "1-4",
-    TRUE     ~ paste0(5 * (e %/% 5), "-", 5 * (e %/% 5) + 4)
-  )
-}
-
+# (con la misma regla grupo_edad() que usa el script 02)
 dif_quinquenal <- simple %>%
-  mutate(edad = grupo_quinquenal(edad)) %>%
+  mutate(edad = grupo_edad(edad)) %>%
   group_by(edad, sexo, anio, region) %>%
   summarise(desde_simple = sum(mortalidad), .groups = "drop") %>%
   full_join(quinquenal, by = c("edad", "sexo", "anio", "region")) %>%

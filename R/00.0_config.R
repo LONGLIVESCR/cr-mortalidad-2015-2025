@@ -5,11 +5,19 @@
 #
 # Todos los scripts de R/ empiezan con:
 #
+#   source(here::here("R", "00.0_config.R"))
+#
+# here::here() encuentra la raíz del proyecto (la carpeta que tiene .git o el
+# archivo .here), así que los scripts funcionan igual si se corren desde la
+# raíz o desde cualquier subcarpeta. Necesita el paquete here:
+#   install.packages("here")
+#
 # Contenido:
-#   - carpetas de datos (rutas relativas)
+#   - carpetas de datos (rutas relativas a la raíz del proyecto)
 #   - nombres de todos los archivos de entrada y salida
-#   - constantes compartidas (provincias, sexos, grupos de edad)
+#   - constantes compartidas (provincias, sexos, grupos de edad, años)
 #   - funciones pequeñas que usan varios scripts
+#   - validaciones de los datos de entrada
 #
 # =============================================================================
 
@@ -20,16 +28,23 @@ options(scipen = 999)
 # Carpetas
 # -----------------------------------------------------------------------------
 
+# Raíz del proyecto. Las rutas relativas se cuentan desde aquí y no desde la
+# carpeta en la que esté parado R. Las rutas absolutas (por ejemplo, las que
+# se pongan en CR_MORT_DATA_RAW o CR_MORT_PROCESSED) se dejan como están.
+raiz_proyecto <- here::here()
+
+desde_raiz <- function(ruta) {
+  if (grepl("^(~|/|\\\\|[A-Za-z]:)", ruta)) ruta else file.path(raiz_proyecto, ruta)
+}
+
 # Excel originales del INEC (no se suben al repositorio; ver data-raw/README.md)
-dir_raw <- Sys.getenv("CR_MORT_DATA_RAW", unset = "data-raw")
+dir_raw <- desde_raiz(Sys.getenv("CR_MORT_DATA_RAW", unset = "data-raw"))
 
 # CSV generados por el codigo (no se suben al repositorio)
-dir_procesados <- Sys.getenv("CR_MORT_PROCESSED", unset = file.path("data", "processed"))
+dir_procesados <- desde_raiz(Sys.getenv("CR_MORT_PROCESSED", unset = file.path("data", "processed")))
 
-if (!dir.exists(dir_raw)) {
-  warning("No existe la carpeta de datos crudos: ", normalizePath(dir_raw, mustWork = FALSE),
-          "\nRevise data-raw/README.md o defina CR_MORT_DATA_RAW.")
-}
+# Los scripts que leen los Excel (01, 03 y 05) revisan que existan sus
+# archivos, así que aquí no se exige la carpeta dir_raw.
 dir.create(dir_procesados, recursive = TRUE, showWarnings = FALSE)
 
 
@@ -102,6 +117,10 @@ codigos_provincia <- setNames(orden_provincias, as.character(1:7))
 
 orden_sexos <- c("Hombre", "Mujer", "Total")
 
+# Años que cubre la base. Las validaciones detienen el script si aparece un
+# año fuera de este rango.
+anios_estudio <- 2015:2025
+
 # Grupos de edad con exposición. Cada script agrega al final las categorías
 # que le corresponden ("Ignorada", "Edad ignorada", "Total").
 grupos_edad_quinquenal <- c(
@@ -171,3 +190,66 @@ excepciones_inec4 <- data.frame(
   motivo = "J09 (influenza pandémica) aparece en la base pero no existe en la lista Ed2008",
   stringsAsFactors = FALSE
 )
+
+
+# -----------------------------------------------------------------------------
+# Validaciones de entrada
+# -----------------------------------------------------------------------------
+# Detienen el script con un mensaje claro cuando falta un archivo o una
+# columna, o cuando hay valores que no se esperan. Con datos correctos no
+# hacen nada.
+
+# Que existan los archivos de entrada.
+validar_archivos <- function(rutas, ayuda = NULL) {
+  faltan <- rutas[!file.exists(rutas)]
+  if (length(faltan) > 0) {
+    stop("No se encontraron estos archivos de entrada:\n",
+         paste0("  - ", faltan, collapse = "\n"),
+         if (!is.null(ayuda)) paste0("\n", ayuda),
+         call. = FALSE)
+  }
+  invisible(TRUE)
+}
+
+# Que la tabla tenga las columnas que usa el script.
+validar_columnas <- function(datos, columnas, nombre) {
+  faltan <- setdiff(columnas, names(datos))
+  if (length(faltan) > 0) {
+    stop(nombre, " no tiene las columnas obligatorias: ", paste(faltan, collapse = ", "),
+         "\n  Columnas encontradas: ", paste(names(datos), collapse = ", "),
+         call. = FALSE)
+  }
+  invisible(TRUE)
+}
+
+# Que todos los años sean enteros dentro de anios_estudio (2015-2025).
+# Si falta algún año del período solo se avisa, porque el script puede
+# correr con menos años.
+validar_anios <- function(anios, nombre, rango = anios_estudio) {
+  anios_num <- suppressWarnings(as.integer(as.character(anios)))
+  fuera <- unique(as.character(anios)[is.na(anios_num) | !anios_num %in% rango])
+  if (length(fuera) > 0) {
+    stop(nombre, " tiene años vacíos o fuera del rango ", min(rango), "-", max(rango), ": ",
+         paste(head(fuera, 10), collapse = ", "),
+         call. = FALSE)
+  }
+  faltan <- setdiff(rango, anios_num)
+  if (length(faltan) > 0) {
+    warning(nombre, " no tiene datos de los años: ", paste(faltan, collapse = ", "),
+            call. = FALSE)
+  }
+  invisible(TRUE)
+}
+
+# Que una columna solo tenga los valores esperados (sexos, provincias, edades).
+validar_valores <- function(x, permitidos, columna, nombre) {
+  x <- as.character(x)
+  raros <- unique(x[is.na(x) | !x %in% permitidos])
+  if (length(raros) > 0) {
+    stop(nombre, ": la columna '", columna, "' tiene valores no esperados: ",
+         paste(head(raros, 10), collapse = ", "),
+         "\n  Se esperaba: ", paste(permitidos, collapse = ", "),
+         call. = FALSE)
+  }
+  invisible(TRUE)
+}

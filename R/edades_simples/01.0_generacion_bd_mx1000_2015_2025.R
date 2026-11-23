@@ -31,18 +31,13 @@ library(tidyverse)
 library(readxl)
 library(stringr)
 
-source("R/00.0_config.R")
+source(here::here("R", "00.0_config.R"))
 
 # -----------------------------------------------------------------------------
 # Configuración (tomada de 00.0_config.R)
 # -----------------------------------------------------------------------------
-
-archivo_poblacion <- file.path(dir_raw, "poblacion_costarica_inec_2000-2050..xlsx")
-
-orden_provincias <- c(
-  "San José", "Alajuela", "Cartago", "Heredia",
-  "Guanacaste", "Puntarenas", "Limón"
-)
+# archivo_poblacion, patron_defunciones_edad_simple, orden_provincias y
+# orden_sexos vienen de la config.
 
 # En la hoja C10 del INEC cada sexo ocupa un rango de columnas.
 columnas_sexo_c10 <- list(
@@ -50,6 +45,35 @@ columnas_sexo_c10 <- list(
   Hombre = 95:186,
   Mujer  = 188:279
 )
+
+
+# -----------------------------------------------------------------------------
+# Validación de entrada
+# -----------------------------------------------------------------------------
+
+# Excel de defunciones, uno por año (se leen en el PASO 2).
+archivos_defunciones <- list.files(
+  path       = dir_raw,
+  pattern    = patron_defunciones_edad_simple,
+  full.names = TRUE
+) %>%
+  sort()
+
+validar_archivos(
+  archivo_poblacion,
+  ayuda = "Ponga los Excel del INEC en data-raw/ o defina CR_MORT_DATA_RAW."
+)
+
+if (length(archivos_defunciones) == 0) {
+  stop("No hay archivos Defunciones_edadessimples_YYYY.xlsx en ", dir_raw,
+       "\nPonga los Excel del INEC en data-raw/ o defina CR_MORT_DATA_RAW.", call. = FALSE)
+}
+
+hojas_poblacion <- excel_sheets(archivo_poblacion)
+if (!"C10" %in% hojas_poblacion) {
+  stop(basename(archivo_poblacion), " no tiene la hoja C10. Hojas encontradas: ",
+       paste(hojas_poblacion, collapse = ", "), call. = FALSE)
+}
 
 
 # =============================================================================
@@ -68,12 +92,21 @@ datos_pob <- read_excel(
   .name_repair  = "minimal"
 )
 
+if (ncol(datos_pob) < max(unlist(columnas_sexo_c10))) {
+  stop("La hoja C10 tiene ", ncol(datos_pob), " columnas; se esperaban al menos ",
+       max(unlist(columnas_sexo_c10)), " (bloques Total, Hombre y Mujer).", call. = FALSE)
+}
+
 # Filas que contienen un año (2000 a 2050).
 filas_con_anio <- which(
   apply(datos_pob, 1, function(fila) {
     any(str_detect(as.character(fila), "^20[0-5][0-9]$"))
   })
 )
+
+if (length(filas_con_anio) == 0) {
+  stop("No se encontró ninguna fila con años (2000-2050) en la hoja C10.", call. = FALSE)
+}
 
 anios_poblacion <- as.integer(as.character(datos_pob[[3]][filas_con_anio]))
 
@@ -128,7 +161,16 @@ extraer_poblacion_c10 <- function() {
   bind_rows(lista)
 }
 
-poblacion <- extraer_poblacion_c10() %>%
+poblacion_c10 <- extraer_poblacion_c10()
+
+# En los años de estudio, las provincias deben tener los nombres del INEC;
+# si no, la población no se pega con las defunciones.
+validar_valores(
+  poblacion_c10$region[poblacion_c10$anio %in% anios_estudio],
+  orden_provincias, "provincia", "Hoja C10 de población"
+)
+
+poblacion <- poblacion_c10 %>%
   filter(edad != "Total") %>%
   mutate(
     region = factor(region, levels = orden_provincias),
@@ -151,6 +193,11 @@ poblacion <- extraer_poblacion_c10() %>%
 extraer_un_anio <- function(ruta_excel) {
 
   df <- read_excel(ruta_excel, col_names = FALSE, col_types = "text")
+
+  if (ncol(df) < 10) {
+    stop(basename(ruta_excel), " tiene ", ncol(df), " columnas; se esperaban al menos 10 ",
+         "(edad en la columna 3 y las 7 provincias de la 4 a la 10).", call. = FALSE)
+  }
 
   anio <- as.integer(str_extract(as.character(df[[1]][6]), "\\d{4}"))
   if (is.na(anio)) {
@@ -223,14 +270,38 @@ extraer_un_anio <- function(ruta_excel) {
   map_dfr(seq_len(nrow(inicios)), extraer_bloque)
 }
 
-archivos_defunciones <- list.files(
-  path       = dir_raw,
-  pattern    = "^Defunciones_edadessimples_\\d{4}\\.xlsx$",
-  full.names = TRUE
-) %>%
-  sort()
+mortalidad_excel <- map_dfr(archivos_defunciones, extraer_un_anio)
 
-mortalidad <- map_dfr(archivos_defunciones, extraer_un_anio) %>%
+validar_anios(mortalidad_excel$anio, "Excel de defunciones por edad simple")
+
+# Cada año debe venir de un solo Excel.
+anios_repetidos <- mortalidad_excel %>%
+  count(anio, sexo, region, edad) %>%
+  filter(n > 1) %>%
+  distinct(anio)
+if (nrow(anios_repetidos) > 0) {
+  stop("Hay más de un Excel de defunciones con el año: ",
+       paste(anios_repetidos$anio, collapse = ", "),
+       "\nRevise el año de la fila 6 de cada archivo.", call. = FALSE)
+}
+
+# Cada año debe traer los tres bloques: Hombres, Mujeres y Total.
+bloques_faltantes <- expand_grid(anio = unique(mortalidad_excel$anio), sexo = orden_sexos) %>%
+  anti_join(distinct(mortalidad_excel, anio, sexo), by = c("anio", "sexo"))
+if (nrow(bloques_faltantes) > 0) {
+  stop("Faltan bloques de sexo en los Excel de defunciones: ",
+       paste(bloques_faltantes$anio, bloques_faltantes$sexo, collapse = "; "),
+       "\nLa columna 2 de cada Excel debe decir Hombres, Mujeres y Total.", call. = FALSE)
+}
+
+# La hoja C10 debe tener población para todos los años con defunciones.
+anios_sin_poblacion <- setdiff(unique(mortalidad_excel$anio), anios_poblacion)
+if (length(anios_sin_poblacion) > 0) {
+  stop("La hoja C10 no tiene población para: ",
+       paste(anios_sin_poblacion, collapse = ", "), call. = FALSE)
+}
+
+mortalidad <- mortalidad_excel %>%
   mutate(
     region = factor(region, levels = orden_provincias),
     sexo   = factor(sexo,   levels = c("Hombre", "Mujer", "Total"))

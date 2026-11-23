@@ -2,15 +2,15 @@
 # Unir causas CIE-10 con la exposición quinquenal
 # =============================================================================
 #
-# Entrada (carpeta bd/bdProcces)
+# Entrada (dir_procesados, ver 00.0_config.R)
 #   mortalidad_cie10_2015_2025.csv
-#     edad, sexo, anio, region, CIE10_4, mortalidad
+#     edad, sexo, anio, region, INEC_4, mortalidad
 #   mortalidad_mx_1000_quinquenal_2015_2025.csv
 #     solo se usa exposicion
 #
 # Salida
 #   mortalidad_cie10_mx_2015_2025.csv
-#     edad, sexo, anio, region, CIE10_4, mortalidad, exposicion, mx, mx_1000
+#     edad, sexo, anio, region, INEC_4, mortalidad, exposicion, mx, mx_1000
 #
 # Reglas
 #   - "Edad ignorada" se llama "Ignorada".
@@ -25,40 +25,32 @@
 library(dplyr)
 library(readr)
 
-options(scipen = 999)
+# orden_provincias y decimal_fijo() vienen de la config.
+source(here::here("R", "00.0_config.R"))
 
-carpeta <- "dirección de la carpeta"
+archivo_cie <- salida$cie10
+archivo_mx  <- salida$quinquenal
+archivo_out <- salida$cie10_mx
 
-archivo_cie <- file.path(carpeta, "mortalidad_cie10_2015_2025.csv")
-archivo_mx  <- file.path(carpeta, "mortalidad_mx_1000_quinquenal_2015_2025.csv")
-archivo_out <- file.path(carpeta, "mortalidad_cie10_mx_2015_2025.csv")
+orden_edades <- c(grupos_edad_quinquenal, "Ignorada", "Total")
 
-orden_regiones <- c(
-  "San José", "Alajuela", "Cartago", "Heredia",
-  "Guanacaste", "Puntarenas", "Limón"
-)
-
-orden_edades <- c(
-  "0", "1-4",
-  "5-9", "10-14", "15-19", "20-24", "25-29",
-  "30-34", "35-39", "40-44", "45-49", "50-54",
-  "55-59", "60-64", "65-69", "70-74", "75-79",
-  "80-84", "85-89",
-  "90 años y más",
-  "Ignorada",
-  "Total"
-)
-
-decimal_fijo <- function(x, decimales = 10) {
-  if_else(is.na(x), NA_character_, sprintf(paste0("%.", decimales, "f"), x))
-}
+validar_archivos(c(archivo_cie, archivo_mx), ayuda = "Corra antes 02.0 y 03.0.")
 
 
 # -----------------------------------------------------------------------------
 # 1. Causas
 # -----------------------------------------------------------------------------
 
-causas <- read_csv(archivo_cie, show_col_types = FALSE) %>%
+causas <- read_csv(archivo_cie, show_col_types = FALSE)
+
+validar_columnas(
+  causas,
+  c("edad", "sexo", "anio", "region", "INEC_4", "mortalidad"),
+  basename(archivo_cie)
+)
+validar_anios(causas$anio, basename(archivo_cie))
+
+causas <- causas %>%
   mutate(
     edad   = if_else(edad == "Edad ignorada", "Ignorada", as.character(edad)),
     sexo   = as.character(sexo),
@@ -71,7 +63,15 @@ causas <- read_csv(archivo_cie, show_col_types = FALSE) %>%
 # 2. Solo la exposición
 # -----------------------------------------------------------------------------
 
-exposicion <- read_csv(archivo_mx, show_col_types = FALSE) %>%
+exposicion <- read_csv(archivo_mx, show_col_types = FALSE)
+
+validar_columnas(
+  exposicion,
+  c("edad", "sexo", "anio", "region", "exposicion"),
+  basename(archivo_mx)
+)
+
+exposicion <- exposicion %>%
   filter(sexo %in% c("Hombre", "Mujer")) %>%
   transmute(
     edad       = as.character(edad),
@@ -105,7 +105,7 @@ base_final <- causas %>%
     mx_1000 = mx * 1000,
     edad    = factor(edad, levels = orden_edades),
     sexo    = factor(sexo, levels = c("Hombre", "Mujer")),
-    region  = factor(region, levels = orden_regiones)
+    region  = factor(region, levels = orden_provincias)
   ) %>%
   arrange(anio, region, as.integer(INEC_4), edad, sexo) %>%
   select(edad, sexo, anio, region, INEC_4, mortalidad, exposicion, mx, mx_1000)

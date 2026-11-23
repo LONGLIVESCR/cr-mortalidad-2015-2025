@@ -20,35 +20,19 @@
 library(dplyr)
 library(readr)
 
-options(scipen = 999)
+# grupo_edad() viene de la config: es la misma regla de agrupación que se usó
+# para construir la base quinquenal.
+source(here::here("R", "00.0_config.R"))
 
-carpeta <- "dirección de la carpeta"
+archivo_simple     <- salida$edad_simple
+archivo_quinquenal <- salida$quinquenal
 
-archivo_simple     <- file.path(carpeta, "mortalidad_mx_1000_2015_2025.csv")
-archivo_quinquenal <- file.path(carpeta, "mortalidad_mx_1000_quinquenal_2015_2025.csv")
+validar_archivos(
+  c(archivo_simple, archivo_quinquenal),
+  ayuda = "Corra antes 01.0 y 02.0."
+)
 
 tolerancia_mx <- 1e-8
-
-
-# -----------------------------------------------------------------------------
-# Misma regla de agrupación que se usó para construir la base quinquenal
-# -----------------------------------------------------------------------------
-
-grupo_edad <- function(edad) {
-
-  edad <- as.character(edad)
-  edad_num <- suppressWarnings(as.integer(edad))
-
-  case_when(
-    edad == "Ignorada"      ~ "Ignorada",
-    edad == "90 años y más" ~ "90 años y más",
-    edad == "0"             ~ "0",
-    edad_num %in% 1:4       ~ "1-4",
-    !is.na(edad_num) & edad_num >= 5 & edad_num <= 89 ~
-      paste0(5 * (edad_num %/% 5), "-", 5 * (edad_num %/% 5) + 4),
-    TRUE ~ edad
-  )
-}
 
 
 # -----------------------------------------------------------------------------
@@ -187,6 +171,6 @@ print(
 
 write_csv(
   fallos,
-  file.path(carpeta, "verificacion_quinquenal_fallos.csv")
+  salida$verif_quinquenal
 )
 cat("\nDetalle guardado en verificacion_quinquenal_fallos.csv\n")

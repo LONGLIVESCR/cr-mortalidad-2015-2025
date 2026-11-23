@@ -9,12 +9,18 @@
 library(dplyr)
 library(readr)
 
-carpeta <- "dirección de la carpeta con los datos procesados"
-orig <- read_csv(file.path(carpeta, "mortalidad_cie10_mx_2015_2025.csv"),
+source(here::here("R", "00.0_config.R"))
+
+validar_archivos(
+  c(salida$cie10_mx, salida$unificada, salida$diccionario),
+  ayuda = "Corra antes 04.0, 05.0 y 06.0."
+)
+
+orig <- read_csv(salida$cie10_mx,
                  col_types = cols(.default = col_character()))
-unif <- read_csv(file.path(carpeta, "mortalidad_inec_cie10_mx_2015_2025.csv"),
+unif <- read_csv(salida$unificada,
                  col_types = cols(.default = col_character()))
-dic  <- read_csv(file.path(carpeta, "diccionario_inec_cie10_por_anio.csv"),
+dic  <- read_csv(salida$diccionario,
                  col_types = cols(.default = col_character()))
 
 resultados <- list()
